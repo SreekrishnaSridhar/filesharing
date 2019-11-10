@@ -3,9 +3,9 @@ import sys
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-def initialize():
+def initialize(ip, port):
     # Bind the socket to the port
-    server_address = ('localhost', 10000)
+    server_address = (ip, port)
     print('Starting up on', server_address)
 
     sock.bind(server_address)
@@ -19,10 +19,15 @@ def initialize():
         print('Waiting for a connection')
         connection, client_address = sock.accept()
 
-        print('Received connection from client', connection, client_address)
+        command = ''
+        while command != 'exit':
+            print('Received connection from client', connection, client_address)
+            command = connection.recv(4096).decode('utf-8')
 
+            print('Command from client', command)
+            # TODO: parse and process command
 
 if __name__ == '__main__':
     print('Booting fileshare server')
 
-    initialize()
+    initialize('localhost', 10000)
