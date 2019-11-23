@@ -7,19 +7,17 @@ if __name__ == '__main__':
 
     fileStreamer = FileStreamer()
 
-    fileStreamer.listen('localhost', 10000)
+    fileStreamer.listen('localhost', 10005)
 
     # TODO: terminate if user presses ctrl-C and shutdown gracefully
     while True:
         # Wait for a connection
         print('Waiting for a connection')
-        connection, client_address = fileStreamer.conn.accept()
-
-        print('Received connection from client', connection, client_address)
+        fileStreamer.accept()
 
         command = None
         while command != 'exit':            
-            clientCommand = connection.recv(4096).decode('utf-8')
+            clientCommand = fileStreamer.recvMessage()
 
             print('Command from client', clientCommand)
 
@@ -27,15 +25,22 @@ if __name__ == '__main__':
 
             command = args[0]
 
-            fileName = None
+            fileName = 'default.txt'
+            
             if len(args) == 2:
                 fileName = args[1]
             
             # TODO: parse and process command
             if command == 'download':
                 fileStreamer.sendFile(fileName)
+
+                print('File download complete')
             elif command == 'upload':
-                fileStreamer.recvFile()
+                fileStreamer.sendMessage('Ack')
+
+                fileStreamer.recvFile(fileName)
+
+                print('File upload complete')
             else:
                 print('Invalid client request')
 
