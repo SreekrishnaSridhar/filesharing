@@ -1,0 +1,1 @@
+I am writing this file to test chunking. We need to chunk it into 64 pieces at a time so that, it can be used to encrypt/decrypt and check for integrity. Once the file is chunked, we encrypt it.
