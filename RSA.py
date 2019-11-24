@@ -7,4 +7,3 @@ def publickey():
     public_pem = public_key.export_key().decode()
     with open('public_pem.pem','w') as pu:
         pu.write(public_pem)
-
