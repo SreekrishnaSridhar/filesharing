@@ -1,4 +1,4 @@
-# filesharing
+# Filesharing Security
 Network security project
 
 Encryption.py file does encryption,decryption and integrity hash generation.
