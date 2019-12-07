@@ -13,4 +13,4 @@ def keys():
     key_two = hex(key_two)
     key_one = key_one.lstrip("0x")
     key_two = key_two.lstrip("0x")
-    return random_one, key, key_one, key_two
+    return random_one, random_two, key, key_one, key_two
