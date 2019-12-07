@@ -1,7 +1,7 @@
 import hashlib
 from session import keys
 
-R1, k, K1, K2 = keys()
+##R1, k, K1, K2 = keys()
 
 def filechunking(file):
     file = open(file, "r")
@@ -10,7 +10,7 @@ def filechunking(file):
     chunk = 64
     data = [text[i:i+chunk] for i in range(0, len(text), chunk)]
     return data
-def encryption(data):
+def encryption(data,K1):
     ##Using K1 for encryption
     initialvector = "This is the initialization vector"
     initialvector = hashlib.sha256(initialvector.encode()).hexdigest()
@@ -27,7 +27,7 @@ def encryption(data):
         temp = ''.join(chr(ord(a)^ord(b)) for a, b in zip(hash_temp, data[i]))
         cipher.append(temp)
     return cipher
-def decryption(cipher):
+def decryption(cipher,K1):
     initialvector = "This is the initialization vector"
     initialvector = hashlib.sha256(initialvector.encode()).hexdigest()
     plain = []
@@ -43,7 +43,7 @@ def decryption(cipher):
         plain.append(temp)
     return plain
 ## Integrity check, use K2
-def integrity(plain):
+def integrity(plain,K2):
     initialvector = "This is the initialization vector"
     initialvector = hashlib.sha256(initialvector.encode()).hexdigest()
     finalhash = []
