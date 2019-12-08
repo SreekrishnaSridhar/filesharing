@@ -12,7 +12,6 @@ if __name__ == '__main__':
 
     # TODO: authenticate server
     r1, encryptKey, integrityKey = crypto.generateKeys()
-    print(r1, encryptKey, integrityKey)
 
     publicKey = RSA.import_key(open('rsa.pem.pub','r').read())
     
