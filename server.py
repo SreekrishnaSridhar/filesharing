@@ -1,46 +1,58 @@
-from lib.fileStreamer import FileStreamer
+from Crypto.PublicKey import RSA
 
-# TODO: obtain from environment variable
+from lib.fileStreamer import FileStreamer
+import lib.crypto as crypto
 
 if __name__ == '__main__':
     print('Booting fileshare server')
 
     fileStreamer = FileStreamer()
 
+    # TODO: obtain from environment variable
     fileStreamer.listen('localhost', 10005)
 
-    # TODO: terminate if user presses ctrl-C and shutdown gracefully
-    while True:
-        # Wait for a connection
-        print('Waiting for a connection')
-        fileStreamer.accept()
+    # Wait for a connection
+    print('Waiting for a connection')
+    fileStreamer.accept()
 
-        command = None
-        while command != 'exit':            
-            clientCommand = fileStreamer.recvMessage()
+    privKey = RSA.import_key(open('rsa.pem', 'r').read())
 
-            print('Command from client', clientCommand)
+    authPayloadEncrypted = fileStreamer.conn.recv(4096)
+    
+    authPayload = crypto.priv_decrypt(authPayloadEncrypted, privKey)
 
-            args = clientCommand.split(' ')
+    r1, encryptKey, integrityKey = authPayload.decode('utf-8').split(',')
 
-            command = args[0]
+    fileStreamer.sendMessage(r1)
 
-            fileName = 'default.txt'
-            
-            if len(args) == 2:
-                fileName = args[1]
-            
-            # TODO: parse and process command
-            if command == 'download':
-                fileStreamer.sendFile(fileName)
+    fileStreamer.establishKeys(encryptKey, integrityKey)
 
-                print('File download complete')
-            elif command == 'upload':
-                fileStreamer.sendMessage('Ack')
+    command = None
+    while command != 'exit':            
+        clientCommand = fileStreamer.recvMessage()
 
-                fileStreamer.recvFile(fileName)
+        print('Command from client', clientCommand)
 
-                print('File upload complete')
-            else:
-                print('Invalid client request')
+        args = clientCommand.split(' ')
+
+        command = args[0]
+
+        fileName = 'default.txt'
+        
+        if len(args) == 2:
+            fileName = args[1]
+        
+        # TODO: parse and process command
+        if command == 'download':
+            fileStreamer.sendFile(fileName)
+
+            print('File download complete')
+        elif command == 'upload':
+            fileStreamer.sendMessage('Ack')
+
+            fileStreamer.recvFile(fileName)
+
+            print('File upload complete')
+        else:
+            print('Invalid client request')
 
