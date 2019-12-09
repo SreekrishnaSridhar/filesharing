@@ -48,19 +48,18 @@ class FileStreamer():
 
     def sendFile(self, fileName):
         filePath = FILE_DIR + fileName
+
         integrityHash = hashlib.sha256()
         integrityHash.update(self.integrityKey)
 
         with open(filePath, 'rb') as fileObj:
             chunk = '-'
             prevChunk = IV
-            while chunk[-3:] != b'EOF':
+
+            while chunk != b'':
                 chunk = fileObj.read(CHUNK_SIZE)
 
                 integrityHash.update(chunk)
-
-                if len(chunk) < CHUNK_SIZE:
-                    chunk += b'EOF'
 
                 encryptedChunk = crypto.hashXOR(chunk, self.encryptKey, prevChunk)
 
@@ -73,31 +72,26 @@ class FileStreamer():
     def recvFile(self, fileName):
         # TODO: receive file until end character
         filePath = FILE_DIR + fileName
+
         integrityHash = hashlib.sha256()
         integrityHash.update(self.integrityKey)
 
         with open(filePath, 'wb') as fileObj:
             chunk = '-' # Stop reading from buffer when line is empty
             prevChunk = IV
-            while chunk:
+            while True:
                 encryptedChunk = self.conn.recv(CHUNK_SIZE)
 
                 chunk = crypto.hashXOR(encryptedChunk, self.encryptKey, prevChunk)
 
                 prevChunk = encryptedChunk
 
-                if chunk[-3:] == b'EOF':
-                    chunk = chunk[:-3]
-
-                    integrityHash.update(chunk)
-
-                    fileObj.write(chunk)
-
-                    break
-
                 integrityHash.update(chunk)
                 
                 fileObj.write(chunk)
+
+                if len(chunk) != CHUNK_SIZE:
+                    break
 
         return integrityHash.digest()
         
