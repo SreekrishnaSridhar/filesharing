@@ -1,6 +1,7 @@
 import sys
 import socket
 import os
+import hashlib
 
 import lib.crypto as crypto
 
@@ -10,7 +11,7 @@ IV = b'initialization vector'
 
 class FileStreamer():
     encryptKey = None
-    sessionKey = None
+    integrityKey = None
 
     def __init__(self):
         # Create a TCP/IP connection
@@ -19,7 +20,7 @@ class FileStreamer():
     
     def establishKeys(self, k1, k2):
         self.encryptKey = k1.encode('utf-8')
-        self.sessionKey = k2.encode('utf-8')
+        self.integrityKey = k2.encode('utf-8')
 
     def listen(self, ip, port):
         # Bind the socket to the port        
@@ -47,13 +48,16 @@ class FileStreamer():
 
     def sendFile(self, fileName):
         filePath = FILE_DIR + fileName
+        integrityHash = hashlib.sha256()
+        integrityHash.update(self.integrityKey)
 
-        # Send file as encrypted chunks
         with open(filePath, 'rb') as fileObj:
             chunk = '-'
             prevChunk = IV
             while chunk[-3:] != b'EOF':
                 chunk = fileObj.read(CHUNK_SIZE)
+
+                integrityHash.update(chunk)
 
                 if len(chunk) < CHUNK_SIZE:
                     chunk += b'EOF'
@@ -62,15 +66,15 @@ class FileStreamer():
 
                 prevChunk = encryptedChunk
                 
-                print(chunk, len(chunk))
-                print('Send length', len(encryptedChunk))
-                print(encryptedChunk)
-
                 self.conn.send(encryptedChunk)
+        
+        return integrityHash.digest()
 
     def recvFile(self, fileName):
         # TODO: receive file until end character
         filePath = FILE_DIR + fileName
+        integrityHash = hashlib.sha256()
+        integrityHash.update(self.integrityKey)
 
         with open(filePath, 'wb') as fileObj:
             chunk = '-' # Stop reading from buffer when line is empty
@@ -80,18 +84,22 @@ class FileStreamer():
 
                 chunk = crypto.hashXOR(encryptedChunk, self.encryptKey, prevChunk)
 
-                print(chunk)
-
                 prevChunk = encryptedChunk
 
                 if chunk[-3:] == b'EOF':
                     chunk = chunk[:-3]
 
+                    integrityHash.update(chunk)
+
                     fileObj.write(chunk)
 
                     break
 
+                integrityHash.update(chunk)
+                
                 fileObj.write(chunk)
+
+        return integrityHash.digest()
         
     def close(self, conn):
         conn.close()

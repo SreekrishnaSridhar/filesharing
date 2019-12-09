@@ -9,7 +9,7 @@ if __name__ == '__main__':
     fileStreamer = FileStreamer()
 
     # TODO: obtain from environment variable
-    fileStreamer.listen('localhost', 10005)
+    fileStreamer.listen('localhost', 10000)
 
     # Wait for a connection
     print('Waiting for a connection')
@@ -44,15 +44,30 @@ if __name__ == '__main__':
         
         # TODO: parse and process command
         if command == 'download':
-            fileStreamer.sendFile(fileName)
+            fileHash = fileStreamer.sendFile(fileName)
 
             print('File download complete')
+
+            confirm = fileStreamer.recvMessage()
+
+            fileStreamer.conn.send(fileHash)
+
+            print('File hash', fileHash)
         elif command == 'upload':
             fileStreamer.sendMessage('Ack')
 
-            fileStreamer.recvFile(fileName)
+            fileHash = fileStreamer.recvFile(fileName)
 
             print('File upload complete')
+
+            fileStreamer.sendMessage('Ack')
+
+            receivedHash = fileStreamer.conn.recv(4096)
+
+            if receivedHash == fileHash:
+                print('Integrity verification successful with hash: ', str(fileHash))
+            else:
+                print('Integrity verification failed. Expected {0}, Received {1}'.format(fileHash, receivedHash))
         else:
             print('Invalid client request')
 

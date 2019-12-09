@@ -6,7 +6,7 @@ import lib.crypto as crypto
 if __name__ == '__main__':
     fileStreamer = FileStreamer()
 
-    fileStreamer.connect('localhost', 10005)
+    fileStreamer.connect('localhost', 10000)
 
     print(fileStreamer.conn)
 
@@ -47,18 +47,31 @@ if __name__ == '__main__':
         if command == 'download':
             fileStreamer.sendMessage(userInput)
 
-            fileStreamer.recvFile(fileName)
+            fileHash = fileStreamer.recvFile(fileName)
 
             print('File download complete')
+
+            fileStreamer.sendMessage('Ack')
+
+            receivedHash = fileStreamer.conn.recv(4096)
+
+            if fileHash == receivedHash:
+                print('File integrity verification successful', fileHash)
+            else:
+                print('Integrity verification failed. Expected {0}, Received {1}'.format(fileHash, receivedHash))
         elif command == 'upload':
             
             fileStreamer.sendMessage(userInput)
 
             confirm = fileStreamer.recvMessage()
 
-            fileStreamer.sendFile(fileName)
+            fileHash = fileStreamer.sendFile(fileName)
 
             print('File upload complete')
+
+            confirm = fileStreamer.recvMessage()
+
+            fileStreamer.conn.send(fileHash)
         else:
             # TODO: incorrect command display help
             print('Incorrect command')
